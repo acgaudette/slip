@@ -123,7 +123,7 @@ static void sym_print(sym sym)
 }
 
 static sym key[] = {
-	#include "key.binds"
+	#include "slip.binds"
 };
 
 typedef struct {
