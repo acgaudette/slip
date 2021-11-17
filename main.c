@@ -57,6 +57,70 @@ typedef struct {
 	};
 } sym;
 
+static const char *sym_type_str(enum sym type)
+{
+	switch (type) {
+	case SYM_NONE:
+		return "SYM_NONE";
+	case SYM_FN:
+		return "SYM_FN";
+	case SYM_CONST:
+		return "SYM_CONST";
+	case SYM_MACRO:
+		return "SYM_MACRO";
+	case SYM_VAR:
+		return "SYM_VAR";
+	case SYM_LIT:
+		return "SYM_LIT";
+	default:
+		panic();
+	}
+}
+
+static void sym_print(sym sym)
+{
+	if (sym.builtin)
+		fprintf(stderr, "%s \"%c\"", sym_type_str(sym.type), sym.op);
+	else
+		fprintf(stderr, "%s \"%s\"", sym_type_str(sym.type), sym.in);
+
+	switch (sym.type) {
+	case SYM_FN:
+		fprintf(stderr, " (");
+		for (size_t i = 0; i < sym.n_param; ++i) {
+			if (sym.params[i])
+				fprintf(stderr, " %lu", sym.params[i]);
+			else
+				fprintf(stderr, " generic");
+		}
+		fprintf(stderr, " )");
+		if (sym.n)
+			fprintf(stderr, " returns type:%lu", sym.n);
+		else
+			fprintf(stderr, " returns generic");
+		break;
+	case SYM_CONST:
+	case SYM_MACRO:
+		if (sym.n)
+			fprintf(stderr, " type:%lu", sym.n);
+		else
+			fprintf(stderr, " generic");
+		break;
+	case SYM_VAR:
+		if (sym.n)
+			fprintf(stderr, " annotated type:%lu", sym.n);
+		else
+			fprintf(stderr, " unknown type");
+		break;
+	case SYM_LIT:
+		for (size_t i = 0; i < sym.n; ++i)
+			fprintf(stderr, " %s", sym.reals[i]);
+		break;
+	default:
+		break;
+	}
+}
+
 static sym key[] = {
 	#include "key.binds"
 };
@@ -107,7 +171,8 @@ static const char *token_type_str(enum token type)
 
 static void token_print(token token)
 {
-	printf(
+	fprintf(
+		stderr,
 		"%s \"%.*s\"",
 		token_type_str(token.type),
 		(int)(token.end - token.beg),
@@ -116,10 +181,10 @@ static void token_print(token token)
 
 	switch (token.type) {
 	case TOK_REAL:
-		printf(" %f", token.real);
+		fprintf(stderr, " %f", token.real);
 		break;
 	case TOK_IDEN:
-		printf(" %s", token.str);
+		fprintf(stderr, " <%s>", token.str);
 		break;
 	default:
 		break;
@@ -377,7 +442,7 @@ static sym symbolize(const char **in)
 	token token = lex(in);
 #ifdef SL_DUMP_TOK
 	token_print(token);
-	printf("\n");
+	fprintf(stderr, "\n");
 #endif
 	sym result = {};
 	sym *sym;
@@ -405,7 +470,7 @@ static sym symbolize(const char **in)
 				err(token);
 #ifdef SL_DUMP_TOK
 			token_print(token);
-			printf("\n");
+			fprintf(stderr, "\n");
 #endif
 			if (token.type != TOK_REAL)
 				err(token);
@@ -413,7 +478,7 @@ static sym symbolize(const char **in)
 		}
 #ifdef SL_DUMP_TOK
 		token_print(token);
-		printf("\n");
+		fprintf(stderr, "\n");
 #endif
 		result.n = i;
 		return result;
@@ -474,6 +539,10 @@ static void parse_sym(sym *node, const char **in)
 			assert(arg);
 
 			*arg = symbolize(in);
+#ifdef SL_DUMP_SYM
+			sym_print(*arg);
+			fprintf(stderr, "\n");
+#endif
 			parse_sym(arg, in);
 			check_arg(node, i, arg);
 			// node->n_int may still be zero at this point
@@ -647,6 +716,10 @@ static void parse(const char *in, const size_t n_line, const size_t n_col)
 	fprintf(stderr, "parse %lu:%lu\n\t%s", n_line, n_col, in);
 #endif
 	sym root = symbolize(&in);
+#ifdef SL_DUMP_SYM
+	sym_print(root);
+	fprintf(stderr, "\n");
+#endif
 	parse_sym(&root, &in);
 	translate(&root);
 	printf(";");
