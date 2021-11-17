@@ -438,7 +438,7 @@ static sym *sym_find_iden(const token token)
 
 static void err(const token token)
 {
-	printf("symbol unrecognized\n\t");
+	fprintf(stderr, "symbol unrecognized:\n\t");
 	token_print(token);
 	printf("\n");
 	panic();
