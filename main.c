@@ -23,6 +23,7 @@ typedef struct {
 		  SYM_NONE
 		, SYM_FN
 		, SYM_CONST
+		, SYM_MACRO
 		, SYM_VAR
 		, SYM_LIT
 	} type;
@@ -325,6 +326,7 @@ static sym *sym_find_op(const token token)
 				continue;
 			break;
 		case SYM_CONST:
+		case SYM_MACRO:
 			continue;
 		default:
 			panic();
@@ -348,6 +350,7 @@ static sym *sym_find_iden(const token token)
 				continue;
 			break;
 		case SYM_CONST:
+		case SYM_MACRO:
 			break;
 		default:
 			panic();
@@ -497,6 +500,7 @@ static void parse_sym(sym *node, const char **in)
 
 		break;
 	case SYM_CONST:
+	case SYM_MACRO:
 	case SYM_VAR:
 	case SYM_LIT:
 	case SYM_NONE:
@@ -580,6 +584,12 @@ static void translate(const sym *node)
 			printf("%s", node->out_4);
 			break;
 		}
+		break;
+	case SYM_MACRO:
+		assert(!node->poly);
+		assert(node->n);
+		assert(node->out);
+		printf("%s", node->out);
 		break;
 	case SYM_VAR:
 		printf("%s", node->out);
