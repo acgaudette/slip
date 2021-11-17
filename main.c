@@ -15,6 +15,7 @@ const char vec_end = ']';
 
 $ dot up + [1 2 3] [4 5 6]
 $ + cam.pos * app cam.rot fwd * * dt axis' config.speed
+$ mix pos_last cam.pos'3 * dt config.damp
 
 */
 
