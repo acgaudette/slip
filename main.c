@@ -35,7 +35,11 @@ typedef struct {
 		char *in;
 	};
 
-	size_t n;
+	union {
+		size_t n;
+		size_t returns;
+	};
+
 	union {
 		char *reals[4];
 		struct {
@@ -122,6 +126,7 @@ static void sym_print(sym sym)
 	}
 }
 
+#define SLIP_GENERIC 0
 static sym key[] = {
 	#include "slip.binds"
 };
