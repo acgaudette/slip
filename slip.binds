@@ -60,7 +60,7 @@
 		.out_3 = "v3_mul",
 		.out_4 = "v4_mul",
 	.n_param = 2,
-		.params = { 1, SLIP_GENERIC },
+		.params = { SLIP_GENERIC, 1 },
 	.returns = SLIP_GENERIC,
 } , {
 	SYM_FN,
