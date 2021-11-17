@@ -531,8 +531,16 @@ static void check_arg(sym *fn, size_t i, sym *arg)
 
 static void parse_sym(sym *node, const char **in)
 {
+	int infer = 0;
 	switch (node->type) {
 	case SYM_FN:
+		for (size_t i = 0; i < node->n_param; ++i) {
+			if (node->params[i])
+				continue;
+			infer = 1;
+			break;
+		}
+
 		for (size_t i = 0; i < node->n_param; ++i) {
 			node->args[i] = malloc(sizeof(sym));
 			sym *arg = node->args[i];
@@ -548,12 +556,21 @@ static void parse_sym(sym *node, const char **in)
 			// node->n_int may still be zero at this point
 		}
 
-		if (!node->n_int) {
-			fprintf(
-				stderr,
-				"type of function \"%s\" could not be inferred\n",
-				node->builtin ? "builtin" : node->in
-			);
+		if (!node->n_int && infer) {
+			if (node->builtin)
+				fprintf(
+					stderr,
+					"type of function \"%c\" "
+					"could not be inferred\n",
+					node->op
+				);
+			else
+				fprintf(
+					stderr,
+					"type of function \"%s\" "
+					"could not be inferred\n",
+					node->in
+				);
 			panic();
 		}
 
@@ -585,12 +602,9 @@ static void translate(const sym *node)
 	case SYM_FN:
 		switch (node->n_int) {
 		case 0:
-			fprintf(
-				stderr,
-				"cannot infer type of function \"%s\"\n",
-				node->in
-			);
-			panic();
+			assert(!node->poly);
+			printf("%s", node->out);
+			break;
 		case 1:
 			assert(node->out_1);
 			printf("%s", node->out_1);
