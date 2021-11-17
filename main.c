@@ -603,8 +603,9 @@ static void parse_sym(sym *node, const char **in)
 	}
 }
 
-static void translate(const sym *node)
+static const sym *translate(const sym *node)
 {
+	const sym *tail = node;
 	switch (node->type) {
 	case SYM_FN:
 		switch (node->n_int) {
@@ -693,7 +694,6 @@ static void translate(const sym *node)
 		break;
 	case SYM_VAR:
 		printf("%s", node->out);
-		free(node->in);
 		break;
 	case SYM_LIT:
 		switch (node->n) {
@@ -704,8 +704,6 @@ static void translate(const sym *node)
 				node->reals[1]
 			);
 
-			for (size_t i = 0; i < 2; ++i)
-				free(node->reals[i]);
 			break;
 		case 3:
 			printf(
@@ -715,8 +713,6 @@ static void translate(const sym *node)
 				node->reals[2]
 			);
 
-			for (size_t i = 0; i < 3; ++i)
-				free(node->reals[i]);
 			break;
 		case 4:
 			printf(
@@ -727,18 +723,17 @@ static void translate(const sym *node)
 				node->reals[3]
 			);
 
-			for (size_t i = 0; i < 4; ++i)
-				free(node->reals[i]);
 			break;
 		default:
 			panic();
 		}
 		break;
 	case SYM_NONE:
-		return;
 	default:
 		panic();
 	}
+
+	return tail;
 }
 
 static void parse(const char *in, const size_t n_line, const size_t n_col)
@@ -750,7 +745,25 @@ static void parse(const char *in, const size_t n_line, const size_t n_col)
 	fprintf(stderr, "\n");
 #endif
 	parse_sym(&root, &in);
-	translate(&root);
+	const sym *tail = translate(&root);
+	sym next = symbolize(&in);
+
+	if (next.type != SYM_NONE) {
+		if (tail->builtin)
+			fprintf(
+				stderr,
+				"\"%c\" is not a recognized function\n",
+				tail->op
+			);
+		else
+			fprintf(
+				stderr,
+				"\"%s\" is not a recognized function\n",
+				tail->in
+			);
+		panic();
+	}
+
 	printf(";");
 #ifdef SL_PARSE_ONLY
 	printf("\n");
