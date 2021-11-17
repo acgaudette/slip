@@ -30,7 +30,7 @@ typedef struct {
 	int builtin;
 	union {
 		char op;
-		const char *in;
+		char *in;
 	};
 
 	size_t n;
@@ -39,7 +39,7 @@ typedef struct {
 		struct {
 			int poly;
 			union {
-				const char *out;
+				char *out;
 				struct {
 					const char *out_1;
 					const char *out_2;
@@ -78,6 +78,7 @@ typedef struct {
 	union {
 		double real;
 		char op;
+		size_t n;
 	};
 } token;
 
@@ -172,6 +173,8 @@ static token lex(const char **in)
 	case ')':
 	case '{':
 	case '}':
+	case '"':
+	case '\'':
 		token.type = TOK_OP;
 		token.op = **in;
 		token.beg = (*in)++;
@@ -233,14 +236,36 @@ static token lex(const char **in)
 		token.type = TOK_IDEN;
 		token.beg = (*in)++;
 
-		while (!isspace(**in))
+		size_t neg = 0;
+		while (!isspace(**in)) {
+			if (**in == '\'') {
+				++(*in);
+				++neg;
+
+				int n = 1;
+				if (isdigit(**in)) {
+					n = atoi(*in);
+					assert(n);
+					++(*in);
+					++neg;
+				}
+
+				token.n = n;
+				break;
+			}
+
 			++(*in);
+		}
 		token.end = *in;
 
 		token.len = token.end - token.beg;
+		assert(token.len >= neg);
+		token.len -= neg;
+
 		token.str = malloc(token.len + 1);
 		assert(token.str);
 		strncpy(token.str, token.beg, token.len);
+		token.str[token.len] = 0;
 		return token;
 	case '0':
 	case '1':
@@ -364,8 +389,8 @@ static sym symbolize(const char **in)
 		sym = sym_find_iden(token);
 		if (!sym) {
 			result.type = SYM_VAR;
-			result.out = token.str;
-			free(token.str);
+			result.in = result.out = token.str;
+			result.n = token.n;
 			return result;
 		}
 		return *sym;
@@ -558,6 +583,7 @@ static void translate(const sym *node)
 		break;
 	case SYM_VAR:
 		printf("%s", node->out);
+		free(node->in);
 		break;
 	case SYM_LIT:
 		switch (node->n) {
