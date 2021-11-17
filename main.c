@@ -606,8 +606,10 @@ static void translate(const sym *node)
 			printf("%s", node->out);
 			break;
 		case 1:
-			assert(node->out_1);
-			printf("%s", node->out_1);
+			if (!node->builtin) {
+				assert(node->out_1);
+				printf("%s", node->out_1);
+			}
 			break;
 		case 2:
 			assert(node->out_2);
@@ -625,10 +627,18 @@ static void translate(const sym *node)
 
 		printf("(");
 
+		if (node->builtin)
+			assert(2 == node->n_param);
+
 		for (size_t i = 0; i < node->n_param; ++i) {
 			sym *arg = (sym*)node->args[i];
 			assert(arg);
 			translate(arg);
+
+			if (!i && node->builtin && node->n_int == 1) {
+				printf(" %c ", node->op);
+				continue;
+			}
 
 			if (i < node->n_param - 1)
 				printf(", ");
