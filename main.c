@@ -736,9 +736,7 @@ static void translate(const sym *node)
 
 static void parse(const char *in, const size_t n_line, const size_t n_col)
 {
-#ifndef SL_DUMP_OUT
 	fprintf(stderr, "parse %lu:%lu\n\t%s", n_line, n_col, in);
-#endif
 	sym root = symbolize(&in);
 #ifdef SL_DUMP_SYM
 	sym_print(root);
@@ -747,6 +745,9 @@ static void parse(const char *in, const size_t n_line, const size_t n_col)
 	parse_sym(&root, &in);
 	translate(&root);
 	printf(";");
+#ifdef SL_PARSE_ONLY
+	printf("\n");
+#endif
 }
 
 int main(int argc, char **argv)
@@ -783,7 +784,7 @@ int main(int argc, char **argv)
 			}
 
 			if (*c != escape || (string | lit)) {
-#ifdef SL_DUMP_OUT
+#ifndef SL_PARSE_ONLY
 				printf("%c", *c);
 #endif
 				continue;
@@ -792,7 +793,7 @@ int main(int argc, char **argv)
 			parse(c + 1, n_line, (c + 1) - line);
 			break;
 		}
-#ifdef SL_DUMP_OUT
+#ifndef SL_PARSE_ONLY
 		printf("\n");
 #endif
 	}
