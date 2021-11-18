@@ -14,9 +14,10 @@ const char vec_end = ']';
 /* demo code
 
 $ dot up + [1 2 3] [4 5 6]
-$ + cam.pos * app cam.rot fwd * * dt axis' config.speed
+$ + cam.pos * app cam.rot fwd * * dt axis config.speed
 $ mix pos_last cam.pos'3 * dt config.damp
 $ mix 2. zero .5
+$ * * a' b c
 
 */
 
@@ -834,4 +835,6 @@ int main(int argc, char **argv)
 
 	free(line);
 	fclose(file);
+
+	fprintf(stderr, "OK\n");
 }
