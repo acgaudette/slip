@@ -16,6 +16,7 @@ const char vec_end = ']';
 $ dot up + [1 2 3] [4 5 6]
 $ + cam.pos * app cam.rot fwd * * dt axis' config.speed
 $ mix pos_last cam.pos'3 * dt config.damp
+$ mix 2. zero .5
 
 */
 
@@ -475,6 +476,11 @@ static sym symbolize(const char **in)
 			return result;
 		}
 		return *sym;
+	case TOK_REAL:
+		result.type = SYM_LIT;
+		result.reals[0] = token.str;
+		result.n = 1;
+		return result;
 	case TOK_VEC_BEG:
 		result.type = SYM_LIT;
 		size_t i = 0;
@@ -498,7 +504,6 @@ static sym symbolize(const char **in)
 	case TOK_EOL:
 		return result;
 	case TOK_VEC_END:
-	case TOK_REAL:
 	default:
 		panic();
 	}
@@ -703,6 +708,9 @@ static const sym *translate(const sym *node)
 		break;
 	case SYM_LIT:
 		switch (node->n) {
+		case 1:
+			printf("%s", node->reals[0]);
+			break;
 		case 2:
 			printf(
 				"(ff) { %s, %s }",
