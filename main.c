@@ -656,8 +656,10 @@ static const sym *translate(const sym *node)
 			translate(arg);
 
 			if (!i && node->builtin && node->n_int == 1) {
-				printf(" %c ", node->op);
-				continue;
+				if (2 == node->n_param) {
+					printf(" %s ", node->out_1);
+					continue;
+				}
 			}
 
 			if (i < node->n_param - 1)
