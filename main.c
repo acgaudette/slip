@@ -430,6 +430,8 @@ static sym *sym_find_iden(const token token)
 
 		if (0 != strncmp(sym->in, token.str, token.len))
 			continue;
+		if (token.len != strlen(sym->in))
+			continue;
 		return sym;
 	}
 
