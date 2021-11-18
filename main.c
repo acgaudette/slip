@@ -225,6 +225,8 @@ static token lex(const char **in)
 	}
 
 	switch (**in) {
+	case '`':
+	case '~':
 	case '+':
 	case '-':
 	case '*':
@@ -647,8 +649,18 @@ static const sym *translate(const sym *node)
 
 		printf("(");
 
-		if (node->builtin)
-			assert(2 == node->n_param);
+		if (node->builtin) {
+			switch (node->n_param) {
+			case 1:
+				if (node->n_int == 1)
+					printf("%s", node->out_1);
+				break;
+			case 2:
+				break;
+			default:
+				panic();
+			}
+		}
 
 		for (size_t i = 0; i < node->n_param; ++i) {
 			sym *arg = (sym*)node->args[i];

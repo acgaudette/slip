@@ -83,6 +83,18 @@
 } , {
 	SYM_FN,
 	.builtin = 1,
+		.op = '~',
+	.poly = 1,
+		.out_1 = "-",
+		.out_2 = "negff",
+		.out_3 = "v3_neg",
+		.out_4 = "v4_neg",
+	.n_param = 1,
+		.params = { SLIP_GENERIC },
+	.returns = SLIP_GENERIC,
+} , {
+	SYM_FN,
+	.builtin = 1,
 		.op = '*',
 	.poly = 1,
 		.out_1 = "*",
