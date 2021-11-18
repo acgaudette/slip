@@ -247,12 +247,16 @@ static token lex(const char **in)
 	case '{':
 	case '}':
 	case '"':
-	case '\'':
-		token.type = TOK_OP;
-		token.op = **in;
-		token.beg = (*in)++;
-		token.end = *in;
-		return token;
+	case '\'': {
+		char next = *(*in + 1);
+		if (isspace(next)) {
+			token.type = TOK_OP;
+			token.op = **in;
+			token.beg = (*in)++;
+			token.end = *in;
+			return token;
+		}
+	}
 	case 'a':
 	case 'b':
 	case 'c':

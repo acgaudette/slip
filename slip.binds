@@ -102,6 +102,13 @@
 		.params = { SLIP_GENERIC, SLIP_GENERIC, 1 },
 	.returns = SLIP_GENERIC,
 } , {
+	SYM_FN,
+	.in = "*q",
+	.out = "qt_mul",
+	.n_param = 2,
+		.params = { 4, 4 },
+	.returns = 4,
+} , {
 	SYM_MACRO,
 	.in = "dt",
 	.out = "_time.dt.game",
