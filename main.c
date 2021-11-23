@@ -404,6 +404,7 @@ static token lex(const char **in)
 	case ' ':
 		++*in;
 		return lex(in);
+	case 0:
 	case '\n':
 		token.type = TOK_EOL;
 		token.op  = **in;
@@ -630,7 +631,7 @@ static void parse_sym(sym *node, const char **in)
 			sym_print(*elem);
 			fprintf(stderr, "\n");
 #endif
-			if (elem->type == SYM_VEC_TAIL)
+			if (!elem->type || elem->type == SYM_VEC_TAIL)
 				break;
 			parse_sym(elem, in);
 			assert(1 == elem->n); // Temporary
