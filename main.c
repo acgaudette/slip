@@ -10,6 +10,7 @@
 const char escape  = '$';
 const char vec_beg = '[';
 const char vec_end = ']';
+const char eol_def = ';';
 
 /* demo code
 
@@ -17,9 +18,11 @@ $ dot up + [1 2 3] [4 5 6]
 $ + cam.pos * app cam.rot fwd * * dt axis config.speed
 $ mix pos_last cam.pos'3 * dt config.damp
 $ mix 2. zero .5
-$ * * a' b c
+$ * * a' b  c ,
 
 */
+
+static char eol;
 
 #define ARG_MAX 4
 typedef struct {
@@ -220,6 +223,13 @@ static token lex(const char **in)
 		token.beg = (*in)++;
 		token.end = *in;
 		return token;
+	case ',':
+	case ';':
+		token.type = TOK_EOL;
+		token.op  = **in;
+		token.beg = (*in)++;
+		token.end =  *in;
+		return token;
 	default:
 		break;
 	}
@@ -387,8 +397,9 @@ static token lex(const char **in)
 		return lex(in);
 	case '\n':
 		token.type = TOK_EOL;
+		token.op  = **in;
 		token.beg = (*in)++;
-		token.end = *in;
+		token.end =  *in;
 		return token;
 	default:
 		fprintf(stderr, "bad char: \"%c\" (%u)\n", **in, **in);
@@ -505,6 +516,7 @@ static sym symbolize(const char **in)
 		result.n = i;
 		return result;
 	case TOK_EOL:
+		eol = eol ?: token.op;
 		return result;
 	case TOK_VEC_END:
 	default:
@@ -767,7 +779,9 @@ static const sym *translate(const sym *node)
 
 static void parse(const char *in, const size_t n_line, const size_t n_col)
 {
+	eol = 0;
 	fprintf(stderr, "parse %lu:%lu\n\t%s", n_line, n_col, in);
+
 	sym root = symbolize(&in);
 #ifdef SL_DUMP_SYM
 	sym_print(root);
@@ -793,7 +807,15 @@ static void parse(const char *in, const size_t n_line, const size_t n_col)
 		panic();
 	}
 
-	printf(";");
+	switch (eol) {
+	case 0:
+	case '\n':
+		printf("%c", eol_def);
+		break;
+	default:
+		printf("%c", eol);
+	}
+
 #ifdef SL_PARSE_ONLY
 	printf("\n");
 #endif
