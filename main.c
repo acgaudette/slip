@@ -19,6 +19,7 @@ $ mix 2. zero .5
 $ * * a' b  c ,
 $ [ sin cos 1 ]
 $ sin cos 1 2
+$ 0 : 3, c'
 
 */
 
@@ -240,6 +241,7 @@ static token lex(const char **in)
 		token.end = *in;
 		return token;
 	case ',':
+	case ':':
 	case ';':
 		token.type = TOK_EOL;
 		token.op  = **in;
@@ -641,7 +643,16 @@ static void parse_sym(sym *node, const char **in)
 			if (!elem->type || elem->type == SYM_VEC_TAIL)
 				break;
 			parse_sym(elem, in);
-			assert(elem->n);
+
+			if (!elem->n) {
+				fprintf(
+					stderr,
+					"vector element %lu length unknown\n",
+					i + 1
+				);
+				panic();
+			}
+
 			i += elem->n;
 		} while (1);
 
@@ -815,6 +826,7 @@ static const sym *translate(const sym *node)
 static void parse(const char *in, const size_t n_line, const size_t n_col)
 {
 	eol = 0;
+	const char *start = in;
 	fprintf(stderr, "parse %lu:%lu\n\t%s", n_line, n_col, in);
 
 	sym root = { .type = SYM_VEC };
@@ -824,9 +836,16 @@ static void parse(const char *in, const size_t n_line, const size_t n_col)
 #endif
 	parse_sym(&root, &in);
 	const sym *tail = translate(&root);
+
+	const char *rem = in;
 	sym next = symbolize(&in);
 
 	if (next.type != SYM_NONE) {
+		if (eol) {
+			printf("%c ", eol);
+			return parse(rem, n_line, n_col + (rem - start));
+		}
+
 		if (tail->builtin)
 			fprintf(
 				stderr,
