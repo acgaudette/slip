@@ -19,6 +19,7 @@ $ + cam.pos * app cam.rot fwd * * dt axis config.speed
 $ mix pos_last cam.pos'3 * dt config.damp
 $ mix 2. zero .5
 $ * * a' b  c ,
+$ [ sin cos 1 ]
 
 */
 
@@ -33,6 +34,8 @@ typedef struct {
 		, SYM_MACRO
 		, SYM_VAR
 		, SYM_LIT
+		, SYM_VEC
+		, SYM_VEC_TAIL
 	} type;
 
 	int builtin;
@@ -47,7 +50,8 @@ typedef struct {
 	};
 
 	union {
-		char *reals[4];
+		char *real;
+		void *elem[4];
 		struct {
 			int poly;
 			union {
@@ -83,6 +87,10 @@ static const char *sym_type_str(enum sym type)
 		return "SYM_VAR";
 	case SYM_LIT:
 		return "SYM_LIT";
+	case SYM_VEC:
+		return "SYM_VEC";
+	case SYM_VEC_TAIL:
+		return "SYM_VEC_TAIL";
 	default:
 		panic();
 	}
@@ -92,8 +100,10 @@ static void sym_print(sym sym)
 {
 	if (sym.builtin)
 		fprintf(stderr, "%s \"%c\"", sym_type_str(sym.type), sym.op);
-	else
+	else if (sym.in)
 		fprintf(stderr, "%s \"%s\"", sym_type_str(sym.type), sym.in);
+	else
+		fprintf(stderr, "%s", sym_type_str(sym.type));
 
 	switch (sym.type) {
 	case SYM_FN:
@@ -124,8 +134,7 @@ static void sym_print(sym sym)
 			fprintf(stderr, " unknown type");
 		break;
 	case SYM_LIT:
-		for (size_t i = 0; i < sym.n; ++i)
-			fprintf(stderr, " %s", sym.reals[i]);
+		fprintf(stderr, " %s", sym.real);
 		break;
 	default:
 		break;
@@ -473,52 +482,37 @@ static sym symbolize(const char **in)
 	fprintf(stderr, "\n");
 #endif
 	sym result = {};
-	sym *sym;
+	sym *src;
 
 	switch (token.type) {
 	case TOK_OP:
-		sym = sym_find_op(token);
-		if (!sym)
+		src = sym_find_op(token);
+		if (!src)
 			err(token);
-		return *sym;
+		return *src;
 	case TOK_IDEN:
-		sym = sym_find_iden(token);
-		if (!sym) {
+		src = sym_find_iden(token);
+		if (!src) {
 			result.type = SYM_VAR;
 			result.in = result.out = token.str;
 			result.n = token.n;
 			return result;
 		}
-		return *sym;
+		return *src;
 	case TOK_REAL:
 		result.type = SYM_LIT;
-		result.reals[0] = token.str;
+		result.real = token.str;
 		result.n = 1;
 		return result;
 	case TOK_VEC_BEG:
-		result.type = SYM_LIT;
-		size_t i = 0;
-		while (TOK_VEC_END != (token = lex(in)).type) {
-			if (i >= 4)
-				err(token);
-#ifdef SL_DUMP_TOK
-			token_print(token);
-			fprintf(stderr, "\n");
-#endif
-			if (token.type != TOK_REAL)
-				err(token);
-			result.reals[i++] = token.str;
-		}
-#ifdef SL_DUMP_TOK
-		token_print(token);
-		fprintf(stderr, "\n");
-#endif
-		result.n = i;
+		result.type = SYM_VEC;
+		return result;
+	case TOK_VEC_END:
+		result.type = SYM_VEC_TAIL;
 		return result;
 	case TOK_EOL:
 		eol = eol ?: token.op;
 		return result;
-	case TOK_VEC_END:
 	default:
 		panic();
 	}
@@ -618,6 +612,33 @@ static void parse_sym(sym *node, const char **in)
 		}
 
 		break;
+	case SYM_VEC: {
+		size_t i = 0;
+		for (;; ++i) {
+			if (i >= 4) {
+				fprintf(
+					stderr,
+					"maximum vector length exceeded\n"
+				);
+			}
+
+			node->elem[i] = malloc(sizeof(sym));
+			sym *elem = node->elem[i];
+			assert(elem);
+			*elem = symbolize(in);
+#ifdef SL_DUMP_SYM
+			sym_print(*elem);
+			fprintf(stderr, "\n");
+#endif
+			if (elem->type == SYM_VEC_TAIL)
+				break;
+			parse_sym(elem, in);
+			assert(1 == elem->n); // Temporary
+		}
+
+		node->n = i;
+		break;
+	}
 	case SYM_CONST:
 	case SYM_MACRO:
 	case SYM_VAR:
@@ -734,40 +755,39 @@ static const sym *translate(const sym *node)
 		printf("%s", node->out);
 		break;
 	case SYM_LIT:
+		printf("%s", node->real);
+		break;
+	case SYM_VEC:
 		switch (node->n) {
 		case 1:
-			printf("%s", node->reals[0]);
 			break;
 		case 2:
-			printf(
-				"(ff) { %s, %s }",
-				node->reals[0],
-				node->reals[1]
-			);
-
+			printf("(ff) { ");
 			break;
 		case 3:
-			printf(
-				"(v3) { %s, %s, %s }",
-				node->reals[0],
-				node->reals[1],
-				node->reals[2]
-			);
-
+			printf("(v3) { ");
 			break;
 		case 4:
-			printf(
-				"(v4) { %s, %s, %s, %s }",
-				node->reals[0],
-				node->reals[1],
-				node->reals[2],
-				node->reals[3]
-			);
-
+			printf("(v4) { ");
 			break;
 		default:
 			panic();
 		}
+
+		for (size_t i = 0; i < node->n; ++i) {
+			sym *elem = (sym*)node->elem[i];
+			assert(elem);
+			translate(elem);
+#ifndef SL_TRAILING_COMMA
+			if (i < node->n - 1)
+#else
+			if (node->n > 1)
+#endif
+			printf(", ");
+		}
+
+		if (node->n > 1)
+			printf(" }");
 		break;
 	case SYM_NONE:
 	default:
