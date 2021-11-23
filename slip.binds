@@ -179,6 +179,13 @@
 	.returns = 4,
 } , {
 	SYM_FN,
+	.in = "clamp",
+	.out = "clampf",
+	.n_param = 3,
+		.params = { 1, 1, 1 },
+	.returns = 1,
+} , {
+	SYM_FN,
 	.in = "sin",
 	.out = "sinf",
 	.n_param = 1,
