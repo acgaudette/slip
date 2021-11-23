@@ -20,6 +20,7 @@ $ mix pos_last cam.pos'3 * dt config.damp
 $ mix 2. zero .5
 $ * * a' b  c ,
 $ [ sin cos 1 ]
+$ sin cos 1 2
 
 */
 
@@ -615,7 +616,7 @@ static void parse_sym(sym *node, const char **in)
 		break;
 	case SYM_VEC: {
 		size_t i = 0;
-		for (;; ++i) {
+		do {
 			if (i >= 4) {
 				fprintf(
 					stderr,
@@ -634,8 +635,9 @@ static void parse_sym(sym *node, const char **in)
 			if (!elem->type || elem->type == SYM_VEC_TAIL)
 				break;
 			parse_sym(elem, in);
-			assert(1 == elem->n); // Temporary
-		}
+			assert(elem->n);
+			i += elem->n;
+		} while (1);
 
 		node->n = i;
 		break;
@@ -759,9 +761,16 @@ static const sym *translate(const sym *node)
 		printf("%s", node->real);
 		break;
 	case SYM_VEC:
-		switch (node->n) {
-		case 1:
+		assert(node->n);
+		sym *fst = (sym*)node->elem[0];
+		assert(fst);
+
+		if (fst->n == node->n) {
+			translate(fst);
 			break;
+		}
+
+		switch (node->n) {
 		case 2:
 			printf("(ff) { ");
 			break;
@@ -775,20 +784,19 @@ static const sym *translate(const sym *node)
 			panic();
 		}
 
-		for (size_t i = 0; i < node->n; ++i) {
+		for (size_t i = 0; i < node->n;) {
 			sym *elem = (sym*)node->elem[i];
 			assert(elem);
 			translate(elem);
 #ifndef SL_TRAILING_COMMA
 			if (i < node->n - 1)
-#else
-			if (node->n > 1)
 #endif
 			printf(", ");
+			i += elem->n;
+			assert(1 == elem->n); // Temporary
 		}
 
-		if (node->n > 1)
-			printf(" }");
+		printf(" }");
 		break;
 	case SYM_NONE:
 	default:
@@ -803,7 +811,7 @@ static void parse(const char *in, const size_t n_line, const size_t n_col)
 	eol = 0;
 	fprintf(stderr, "parse %lu:%lu\n\t%s", n_line, n_col, in);
 
-	sym root = symbolize(&in);
+	sym root = { .type = SYM_VEC };
 #ifdef SL_DUMP_SYM
 	sym_print(root);
 	fprintf(stderr, "\n");
