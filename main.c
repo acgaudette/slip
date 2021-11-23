@@ -5,8 +5,6 @@
 #include <string.h>
 #include <ctype.h>
 
-#include "acg/sys.h"
-
 const char escape  = '$';
 const char vec_beg = '[';
 const char vec_end = ']';
@@ -25,6 +23,14 @@ $ sin cos 1 2
 */
 
 static char eol;
+
+__attribute__((noreturn))
+static void panic()
+{
+	printf("Exit failure\n");
+	fflush(stdout);
+	abort();
+}
 
 #define ARG_MAX 4
 typedef struct {
