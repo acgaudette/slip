@@ -21,8 +21,6 @@ I have been working on slip for approximately 3 hours.
 it compiles [itself](https://github.com/acgaudette/slip/blob/master/main.c#L16) !
 maybe I will never look at this again. who knows!
 
-dependencies:
-- [acg](https://github.com/acgaudette/acg) (for panic)
-
 currently this outputs math in the style of [alg](https://github.com/acgaudette/alg).
 in theory it can support any math library as a backend; see [`./slip.binds`](slip.binds).
+in particular, there's no reason why this couldn't compile to glsl!
