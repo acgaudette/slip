@@ -46,14 +46,12 @@
 	SYM_CONST,
 	.in = "fwd",
 	.poly = 1,
-		.out_2 = "V2_FWD",
 		.out_3 = "V3_FWD",
 		.out_4 = "V4_FWD",
 } , {
 	SYM_CONST,
 	.in = "back",
 	.poly = 1,
-		.out_2 = "V2_BCK",
 		.out_3 = "V3_BCK",
 		.out_4 = "V4_BCK",
 } , {

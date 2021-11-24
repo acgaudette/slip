@@ -48,7 +48,7 @@ allowing you to include multiple statements in one line.
 
 ```
 	struct cond = {
-		test ? $ 1 : 2 ,
+		test ? $ 1 : 2, 4
 	};
 ```
 
@@ -67,6 +67,11 @@ based on the types of its arguments:
 
 ```
 	$ + time dot [1 2 3] dir
+	    ^                ^
+	    scalar           3-vector
+```
+```
+=>	(time + v3_dot((v3) { 1 2 3 }, dir));
 ```
 
 ultimately, all expressions must resolve to a type.
@@ -76,6 +81,8 @@ therefore, it is possible to annotate the type of a free variable manually:
 
 ```
 	$ + a' b
+	  ^
+	  scalar addition
 ```
 
 the `'` suffix serves as an annotation here.
@@ -84,6 +91,8 @@ you can use this for arbitrary vectors by including a number
 
 ```
 	$ mix a'3 b t
+	  ^
+	  lerp between two 3-vectors
 ```
 
 typically (as in above) you only need to annotate one of the arguments --
@@ -94,7 +103,10 @@ all vectors, even 1-vectors, can be specified using the vector tokens
 (default: `[` and `]`).
 
 ```
-	$ [ 8 16. d' ]
+	$ [ 8 .16 d' ]
+```
+```
+=>	(v3) { 8, .16, d };
 ```
 
 however, an EOL or punctuator is a recognized terminating vector token;
@@ -103,15 +115,18 @@ you can elide vector tokens for top-level statements.
 therefore, the following line is equivalent to the one directly above:
 
 ```
-	$ 8 16. d'
+	$ 8 .16 d'
 ```
 
-this makes writing inline vectors in code extremely lexically efficient.
+this makes writing inline vectors in code extremely lexically efficient!
 
 slip's bindings include support for polymorphic 'constants':
 
 ```
-	$ + up * fwd [ 2 4 ]
+	$ + one * up [ 2 4 ]
+	    ^     ^
+	    |     inferred as [ 0 1 ]
+	    inferred as [ 1 1 ]
 ```
 
 as well as 'macros': really just direct text expansions for convenience,
@@ -122,8 +137,8 @@ e.g.
 =>	_time.dt.real;
 ```
 
-slip's identifiers support most 'special characters':
+slip's identifiers support most 'special characters', including operators:
 
 ```
-	$ *q rot axis-angle up theta
+	$ *q rot axis-angle up theta/t
 ```
