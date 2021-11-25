@@ -10,7 +10,7 @@ const char vec_beg = '[';
 const char vec_end = ']';
 const char eol_def = ';';
 
-/* demo code
+/* test code
 
 $ dot up + [1 2 3] [4 5 6]
 $ + cam.pos * app cam.rot fwd * * dt axis config.speed
@@ -20,6 +20,8 @@ $ * * a' b c
 $ [ sin cos 1 ]
 $ sin cos 1 2
 $ 0 : 3, + 1 a,
+$ + 5 (2*2)
+$ *q ~rot axis-angle * ''3 "" -..2theta[5]%%
 
 */
 

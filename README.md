@@ -48,7 +48,7 @@ allowing you to include multiple statements in one line.
 
 ```
 	struct cond = {
-		test ? $ 1 : 2, 4
+		test ? $ 1 : 2, 4,
 	};
 ```
 
@@ -103,10 +103,10 @@ all vectors, even 1-vectors, can be specified using the vector tokens
 (default: `[` and `]`).
 
 ```
-	$ [ 8 .16 d' ]
+	$ [ 2 4 sin theta ]
 ```
 ```
-=>	(v3) { 8, .16, d };
+=>	(v3) { 2, 4, sinf(theta) };
 ```
 
 however, an EOL or punctuator is a recognized terminating vector token;
@@ -115,7 +115,7 @@ you can elide vector tokens for top-level statements.
 therefore, the following line is equivalent to the one directly above:
 
 ```
-	$ 8 .16 d'
+	$ 2 4 sin theta
 ```
 
 this makes writing inline vectors in code extremely lexically efficient!
@@ -137,8 +137,27 @@ e.g.
 =>	_time.dt.real;
 ```
 
-slip's identifiers support most 'special characters', including operators:
+slip's identifiers support all 'special characters',
+including operators--even leading operators:
 
 ```
-	$ *q rot axis-angle up theta/t
+	$ *q rot axis-angle up /cone/theta
+	  ^^                   ^^^^^^^^^^^
+	  function             free variable
 ```
+
+except for punctuators, which are always escaped as such.
+
+this 'elegantly' enables free variables to subsume operators
+like `*`, `&`, and `[]` without coupling slip to the host language.
+plus, you need whitespace for prefix math anyway.
+
+technically this means you can actually... embed C math in slip,
+if you really wanted to.
+```
+	$ + 5 (2*2)
+	      ^^^^^
+	      "free variable"
+```
+
+I don't recommend doing this.
