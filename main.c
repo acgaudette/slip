@@ -21,7 +21,10 @@ $ [ sin cos 1 ]
 $ sin cos 1 2
 $ 0 : 3, + 1 a,
 $ + 5 (2*2)
-$ *q ~rot axis-angle * ''3 "" -..2theta[5]%%
+$ *q ~rot axis-angle "" -..2theta[5]%%
+$ one'4
+$ mix'4 a b 1
+$ +'2 c d
 
 */
 
@@ -168,13 +171,12 @@ typedef struct {
 	} type;
 
 	const char *beg, *end;
-	size_t len;
+	size_t len, n;
 	char *str;
 
 	union {
 		double real;
 		char op;
-		size_t n;
 	};
 } token;
 
@@ -310,10 +312,24 @@ static token lex(const char **in)
 	case '"':
 	case '\'': {
 		char next = *(*in + 1);
-		if (isspace(next)) {
+		if (isspace(next) || '\'' == next) {
 			token.type = TOK_OP;
 			token.op  = **in;
 			token.beg = (*in)++;
+
+			if (**in == '\'') {
+				++(*in);
+
+				int n = 1;
+				if (isdigit(**in)) {
+					n = atoi(*in);
+					assert(n);
+					++(*in);
+				}
+
+				token.n = n;
+			}
+
 			token.end =  *in;
 			return token;
 		} else if ('.' == **in) {
@@ -545,7 +561,10 @@ static sym symbolize(const char **in)
 		src = sym_find_op(token);
 		if (!src)
 			err(token);
-		return *src;
+		result = *src;
+		result.n = result.n ?: token.n;
+		result.n_int = result.n_int ?: token.n;
+		return result;
 	case TOK_IDEN:
 		src = sym_find_iden(token);
 		if (!src) {
@@ -554,7 +573,11 @@ static sym symbolize(const char **in)
 			result.n = token.n;
 			return result;
 		}
-		return *src;
+
+		result = *src;
+		result.n = result.n ?: token.n;
+		result.n_int = result.n_int ?: token.n;
+		return result;
 	case TOK_REAL:
 		result.type = SYM_LIT;
 		result.real = token.str;
