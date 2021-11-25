@@ -19,7 +19,7 @@ $ mix 2. zero -.5
 $ * * a' b c
 $ [ sin cos 1 ]
 $ sin cos 1 2
-$ 0 : 3, c'
+$ 0 : 3, + 1 a,
 
 */
 
@@ -232,6 +232,18 @@ static int is_unary(const char c)
 	}
 }
 
+static int is_punct(const char c)
+{
+	switch (c) {
+	case ',':
+	case ':':
+	case ';':
+		return 1;
+	default:
+		return 0;
+	}
+}
+
 static token lex(const char **in)
 {
 	assert(**in != escape);
@@ -373,6 +385,8 @@ static token lex(const char **in)
 
 		size_t neg = 0;
 		while (!isspace(**in)) {
+			if (is_punct(**in))
+				break;
 			if (**in == '\'') {
 				++(*in);
 				++neg;
@@ -871,7 +885,13 @@ static void parse(const char *in, const size_t n_line, const size_t n_col)
 	sym next = symbolize(&in);
 
 	if (next.type != SYM_NONE) {
-		if (eol) {
+		switch (eol) {
+		case 0:
+			break;
+		case ':':
+			if (1) printf(" %c ", eol);
+			else
+		default:
 			printf("%c ", eol);
 			return parse(rem, n_line, n_col + (rem - start));
 		}
@@ -896,6 +916,8 @@ static void parse(const char *in, const size_t n_line, const size_t n_col)
 	case '\n':
 		printf("%c", eol_def);
 		break;
+	case ':':
+		printf(" ");
 	default:
 		printf("%c", eol);
 	}
