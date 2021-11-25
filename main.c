@@ -15,8 +15,8 @@ const char eol_def = ';';
 $ dot up + [1 2 3] [4 5 6]
 $ + cam.pos * app cam.rot fwd * * dt axis config.speed
 $ mix pos_last cam.pos'3 * dt config.damp
-$ mix 2. zero .5
-$ * * a' b  c ,
+$ mix 2. zero -.5
+$ * * a' b c
 $ [ sin cos 1 ]
 $ sin cos 1 2
 $ 0 : 3, c'
@@ -220,11 +220,22 @@ static void token_print(token token)
 	}
 }
 
+static int is_unary(const char c)
+{
+	switch (c) {
+	case '-':
+	case '+':
+	case '~':
+		return 1;
+	default:
+		return 0;
+	}
+}
+
 static token lex(const char **in)
 {
-	token token = {};
-
 	assert(**in != escape);
+	token token = {};
 
 	switch (**in) {
 	case escape:
@@ -252,11 +263,14 @@ static token lex(const char **in)
 		break;
 	}
 
+	size_t n_dot = 0;
+
 	switch (**in) {
 	case '`':
 	case '~':
 	case '+':
 	case '-':
+	case '_':
 	case '*':
 	case '/':
 	case '!':
@@ -270,6 +284,7 @@ static token lex(const char **in)
 	case ':':
 	case ';':
 	case ',':
+	case '.':
 	case '<':
 	case '>':
 	case '[':
@@ -283,10 +298,22 @@ static token lex(const char **in)
 		char next = *(*in + 1);
 		if (isspace(next)) {
 			token.type = TOK_OP;
-			token.op = **in;
+			token.op  = **in;
 			token.beg = (*in)++;
-			token.end = *in;
+			token.end =  *in;
 			return token;
+		} else if ('.' == **in) {
+			++n_dot;
+			if (isdigit(next))
+				goto literal;
+		} else if (is_unary(**in)) {
+			if (isdigit(next))
+				goto literal;
+			else if ('.' == next) {
+				next = *(*in + 2);
+				if (isdigit(next))
+					goto literal;
+			}
 		}
 	}
 	case 'a':
@@ -341,7 +368,6 @@ static token lex(const char **in)
 	case 'X':
 	case 'Y':
 	case 'Z':
-	case '_':
 		token.type = TOK_IDEN;
 		token.beg = (*in)++;
 
@@ -376,6 +402,7 @@ static token lex(const char **in)
 		strncpy(token.str, token.beg, token.len);
 		token.str[token.len] = 0;
 		return token;
+	literal :
 	case '0':
 	case '1':
 	case '2':
@@ -386,12 +413,15 @@ static token lex(const char **in)
 	case '7':
 	case '8':
 	case '9':
-	case '.':
 		token.type = TOK_REAL;
 		token.beg = (*in)++;
 
-		while (isdigit(**in) || **in == '.')
+		while (isdigit(**in) || **in == '.') {
+			n_dot += '.' == **in;
+			assert(n_dot <= 1);
 			++(*in);
+		}
+
 		token.end = *in;
 
 		errno = 0;
