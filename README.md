@@ -17,6 +17,9 @@ which slip turns into:
 	v3_dot(V3_UP, v3_add((v3) { 1, 2, 3 }, (v3) { 4, 5, 6 }));
 ```
 
+slip follows the 'the best language is two languages' principle of language design
+(more generally: the best language is the right one for the situation).
+
 ~~I have been working on slip for approximately 3 hours.~~
 it compiles [itself](https://github.com/acgaudette/slip/blob/master/main.c#L16) !
 maybe I will never look at this again. who knows!
