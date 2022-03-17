@@ -5,10 +5,13 @@
 #include <string.h>
 #include <ctype.h>
 
-const char escape  = '$';
+const char escape      = '$';
+const char escape_alt  = '@';
+const char eol_def     = ';';
+const char eol_def_alt = ',';
+
 const char vec_beg = '[';
 const char vec_end = ']';
-const char eol_def = ';';
 
 /* test code
 
@@ -250,12 +253,18 @@ static int is_punct(const char c)
 
 static token lex(const char **in)
 {
-	assert(**in != escape);
 	token token = {};
 
 	switch (**in) {
 	case escape:
 		fprintf(stderr, "bad char: equals escape (%c)\n", escape);
+		panic();
+	case escape_alt:
+		fprintf(
+			stderr,
+			"bad char: equals alt. escape (%c)\n",
+			escape_alt
+		);
 		panic();
 	case vec_beg:
 		token.type = TOK_VEC_BEG;
@@ -309,6 +318,7 @@ static token lex(const char **in)
 	case ')':
 	case '{':
 	case '}':
+	case '|':
 	case '"':
 	case '\'': {
 		char next = *(*in + 1);
@@ -476,13 +486,24 @@ static token lex(const char **in)
 		++*in;
 		return lex(in);
 	case 0:
-	case '\n':
+	case '\n': {
+		/*
+		const char *search = *in;
+		while (isspace(*search)) {
+			++search;
+		}
+
+		if (*search == escape) {
+			exit(0);
+		}
+		*/
+
 		token.type = TOK_EOL;
 		token.op  = **in;
 		token.beg = (*in)++;
 		token.end =  *in;
 		return token;
-	default:
+	} default:
 		fprintf(stderr, "bad char: \"%c\" (%u)\n", **in, **in);
 		panic();
 	}
@@ -590,7 +611,8 @@ static sym symbolize(const char **in)
 		result.type = SYM_VEC_TAIL;
 		return result;
 	case TOK_EOL:
-		eol = eol ?: token.op;
+		eol = token.op && token.op != '\n' ?
+			token.op : eol;
 		return result;
 	default:
 		panic();
@@ -694,11 +716,14 @@ static void parse_sym(sym *node, const char **in)
 	case SYM_VEC: {
 		size_t i = 0;
 		do {
-			if (i >= 4) {
+			// FIXME: this gets to 5, of course,
+			// but still does the alloc. bad.
+			if (i > 4) {
 				fprintf(
 					stderr,
 					"maximum vector length exceeded\n"
 				);
+				panic();
 			}
 
 			node->elem[i] = malloc(sizeof(sym));
@@ -894,7 +919,6 @@ static const sym *translate(const sym *node)
 
 static void parse(const char *in, const size_t n_line, const size_t n_col)
 {
-	eol = 0;
 	const char *start = in;
 	fprintf(stderr, "parse %lu:%lu\n\t%s", n_line, n_col, in);
 
@@ -939,8 +963,7 @@ static void parse(const char *in, const size_t n_line, const size_t n_col)
 	switch (eol) {
 	case 0:
 	case '\n':
-		printf("%c", eol_def);
-		break;
+		panic();
 	case ':':
 		printf(" ");
 	default:
@@ -974,6 +997,8 @@ int main(int argc, char **argv)
 
 		++n_line;
 		for (char *c = line; *c != '\n'; ++c) {
+			int do_parse = 0;
+
 			switch (*c) {
 			case '"':
 				string = !string;
@@ -981,11 +1006,17 @@ int main(int argc, char **argv)
 			case '\'':
 				lit = !lit;
 				break;
+			case escape_alt:
+				if (1) eol = eol_def_alt;
+				else
+			case escape:
+				eol = eol_def;
+				do_parse = 1;
 			default:
 				break;
 			}
 
-			if (*c != escape || (string | lit)) {
+			if (!do_parse || (string | lit)) {
 #ifndef SL_PARSE_ONLY
 				printf("%c", *c);
 #endif
