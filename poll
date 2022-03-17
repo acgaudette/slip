@@ -1,0 +1,4 @@
+#!/bin/bash
+
+dowatch 'clear; make debug && ./sl' Makefile main.c
+
