@@ -136,6 +136,13 @@
 	.returns = 1,
 } , {
 	SYM_FN,
+	.in = "cross",
+	.out = "v3_cross",
+	.n_param = 2,
+		.params = { 3, 3 },
+	.returns = 3,
+} , {
+	SYM_FN,
 	.in = "len",
 	.poly = 1,
 		.out_2 = "magff",
