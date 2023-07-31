@@ -173,6 +173,16 @@
 	.returns = SLIP_GENERIC,
 } , {
 	SYM_FN,
+	.in = "fill",
+	.poly = 1,
+		.out_2 = "V2_FILL",
+		.out_3 = "V3_FILL",
+		.out_4 = "V4_FILL",
+	.n_param = 1,
+		.params = { 1 },
+	.returns = SLIP_GENERIC,
+} , {
+	SYM_FN,
 	.in = "mix",
 	.poly = 1,
 		.out_1 = "lerpf",
@@ -285,6 +295,13 @@
 	.out = "powf",
 	.n_param = 2,
 		.params = { 1, 1 },
+	.returns = 1,
+} , {
+	SYM_FN,
+	.in = "sqrt",
+	.out = "sqrtf",
+	.n_param = 1,
+		.params = { 1 },
 	.returns = 1,
 } , {
 	SYM_FN,
